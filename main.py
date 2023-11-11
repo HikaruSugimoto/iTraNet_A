@@ -238,114 +238,117 @@ if selected_option=="A, gene regulatory network (including TF, miRNA, and mRNA) 
         del TFmiRNAmRNAcopy
         gc.collect()
         
-        #Network
-        fig = plt.figure(figsize=(12,8),facecolor='black')
-        ax1 = fig.add_subplot(111, projection='3d')
-        ax1.set_facecolor('black')
-        G1 = nx.Graph()
-        G1.add_nodes_from(TFmiRNAmRNA["Regulator"].unique())
-        G1.add_nodes_from(TFmiRNAmRNA["mRNA"].unique())
-        edge_lists=[tuple(x) for x in TFmiRNAmRNA.iloc[:,[0,1]].values]
-        G1.add_edges_from(edge_lists)
+        if TFmiRNAmRNA.memory_usage(deep=True).sum() / 1024 ** 2>40:
+            st.write("Too many relations to visualize. Please visualize the network on a local machine (https://github.com/HikaruSugimoto/Transomics_iTraNet).")
+        else:
+            #Network
+            fig = plt.figure(figsize=(12,8),facecolor='black')
+            ax1 = fig.add_subplot(111, projection='3d')
+            ax1.set_facecolor('black')
+            G1 = nx.Graph()
+            G1.add_nodes_from(TFmiRNAmRNA["Regulator"].unique())
+            G1.add_nodes_from(TFmiRNAmRNA["mRNA"].unique())
+            edge_lists=[tuple(x) for x in TFmiRNAmRNA.iloc[:,[0,1]].values]
+            G1.add_edges_from(edge_lists)
 
-        pos = {}
-        for i in G1.nodes():
-            if (TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==i]["Regulation"]=="TF").sum()>0:
-                random.seed(1) 
-                pos[i] = (1.5*np.random.rand()-0.3,1.5*np.random.rand(),2) 
-            elif (TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==i]["Regulation"]=="miRNA").sum()>0:
-                random.seed(2) 
-                pos[i] = (-1.5*np.random.rand()+0.3,-1.5*np.random.rand()-0.2,1)
-            else:
-                random.seed(3)
-                pos[i] = (3*np.random.rand()-1.5,3*np.random.rand()-1.5,0) 
-        nx.set_node_attributes(G1,pos,'pos')
-        node_pos = nx.get_node_attributes(G1,'pos')
-        x,y,z = zip(*node_pos.values())
-        ax1.scatter(x,y,z,marker='o',s=0.001,c='black',alpha=0.5)
+            pos = {}
+            for i in G1.nodes():
+                if (TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==i]["Regulation"]=="TF").sum()>0:
+                    random.seed(1) 
+                    pos[i] = (1.5*np.random.rand()-0.3,1.5*np.random.rand(),2) 
+                elif (TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==i]["Regulation"]=="miRNA").sum()>0:
+                    random.seed(2) 
+                    pos[i] = (-1.5*np.random.rand()+0.3,-1.5*np.random.rand()-0.2,1)
+                else:
+                    random.seed(3)
+                    pos[i] = (3*np.random.rand()-1.5,3*np.random.rand()-1.5,0) 
+            nx.set_node_attributes(G1,pos,'pos')
+            node_pos = nx.get_node_attributes(G1,'pos')
+            x,y,z = zip(*node_pos.values())
+            ax1.scatter(x,y,z,marker='o',s=0.001,c='black',alpha=0.5)
 
-        for e in G1.edges():
-            TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==e[0]]
-            TFmiRNAmRNA1=TFmiRNAmRNA1[TFmiRNAmRNA1["mRNA"]==e[1]]
-            if (TFmiRNAmRNA1["FC"]=="UP").sum()>0:
-                ax1.plot([node_pos[e[0]][0],node_pos[e[1]][0]],
-                        [node_pos[e[0]][1],node_pos[e[1]][1]],
-                        [node_pos[e[0]][2],node_pos[e[1]][2]],c=Inc_color,linewidth=0.2,alpha=0.5)
-            if (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
-                ax1.plot([node_pos[e[0]][0],node_pos[e[1]][0]],
-                        [node_pos[e[0]][1],node_pos[e[1]][1]],
-                        [node_pos[e[0]][2],node_pos[e[1]][2]],c=Dec_color,linewidth=0.2,alpha=0.5)        
-
-        verts = [[(-2.0, -2.0, 0), (-2.0, 2.0, 0), (2.0, 2.0, 0), (2.0, -2.0, 0)],
-                [(-2.0, -2.0, 1), (-2.0, 0, 1), (2.0, 0, 1), (2.0, -2.0, 1)],
-                [(-2.0, 0, 2), (-2.0, 2.0, 2), (2.0, 2.0, 2), (2.0, 0, 2)]]
-        planes = Poly3DCollection(verts, alpha=0.3, facecolor='lightgray')
-
-        ax1.text(-2.5,2.2,1.8,
-                "TF ("+"I:"+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="TF") & (TFmiRNAmRNA["FC"]=="UP")]["Regulator"].unique()))+', D:'+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="TF") & (TFmiRNAmRNA["FC"]=="Down")]["Regulator"].unique()))+')',
-                fontname="Arial",color="white",fontsize=9)
-        ax1.text(-2.5,2.2,0.8,
-                "miRNA ("+"I:"+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="miRNA") & (TFmiRNAmRNA["FC"]=="UP")]["Regulator"].unique()))+', D:'+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="miRNA") & (TFmiRNAmRNA["FC"]=="Down")]["Regulator"].unique()))+')',
-                fontname="Arial",color="white",fontsize=9)
-        ax1.text(-2.5,2.2,-0.2,
-                "mRNA ("+"I:"+str(len(TFmiRNAmRNA[TFmiRNAmRNA['FC']=="UP"]["mRNA"].unique()))+', D:'+str(len(TFmiRNAmRNA[TFmiRNAmRNA['FC']=="Down"]["mRNA"].unique()))+')',
-                fontname="Arial",color="white",fontsize=9)
-
-        ax1.add_collection3d(planes)
-        ax1.set_xlim([-1,4])
-        ax1.set_ylim([-1,4])
-        ax1.set_zlim([-1,4])
-        ax1.axis('off')
-        ax1.view_init(7, 10)
-        st.pyplot(fig)
-        f=open('./Fig/A2.txt', 'r')
-        st.write(f.read()) 
-        
-        net=Network(notebook=True,cdn_resources='in_line',height="1000px", filter_menu=True, 
-        width="100%", bgcolor="#222222", font_color="white",directed=False)
-        net.from_nx(G1)
-        for node in net.get_nodes():
-            random.seed(4) 
-            net.get_node(node)['x']=5000*pos[node][0]
-            net.get_node(node)['y']=500*np.random.rand()-5000*pos[node][2]
-            net.get_node(node)['physics']=False
-            net.get_node(node)['label']=str(node) 
-            net.get_node(node)['size']=5
-            if len(TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==node])>0:
-                net.get_node(node)['color']="white"
-            if len(TFmiRNAmRNA[TFmiRNAmRNA["mRNA"]==node])>0:
-                TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["mRNA"]==node]
+            for e in G1.edges():
+                TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==e[0]]
+                TFmiRNAmRNA1=TFmiRNAmRNA1[TFmiRNAmRNA1["mRNA"]==e[1]]
                 if (TFmiRNAmRNA1["FC"]=="UP").sum()>0:
-                    net.get_node(node)['color']=Inc_color
-                elif (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
-                    net.get_node(node)['color']=Dec_color
-        for edge in net.get_edges():
-            TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==edge["from"]]
-            TFmiRNAmRNA1=TFmiRNAmRNA1[TFmiRNAmRNA1["mRNA"]==edge['to']]
-            if (TFmiRNAmRNA1["FC"]=="UP").sum()>0:
-                edge['color']=Inc_color
-            elif (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
-                edge['color']=Dec_color
-        net.toggle_physics(False)
-        net.show_buttons() 
-        net.show("TFmiRNA-mRNA.html")
-        HtmlFile = open("TFmiRNA-mRNA.html", 'r')
-        components.html(HtmlFile.read(), height=900)
-        st.download_button(label="Download the interactice network",data=open("TFmiRNA-mRNA.html", 'r'),
-                        file_name="TFmiRNA-mRNA.html")
-        G1 = nx.Graph()
-        del TFmiRNAmRNA
-        del TFmiRNAmRNA1
-        gc.collect()  
-        
-        current_variables = list(globals().keys())
-        exclude_list = ['current_variables', 'exclude_list','selected_option']
-        variables_to_delete = [var for var in current_variables if var not in exclude_list]
+                    ax1.plot([node_pos[e[0]][0],node_pos[e[1]][0]],
+                            [node_pos[e[0]][1],node_pos[e[1]][1]],
+                            [node_pos[e[0]][2],node_pos[e[1]][2]],c=Inc_color,linewidth=0.2,alpha=0.5)
+                if (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
+                    ax1.plot([node_pos[e[0]][0],node_pos[e[1]][0]],
+                            [node_pos[e[0]][1],node_pos[e[1]][1]],
+                            [node_pos[e[0]][2],node_pos[e[1]][2]],c=Dec_color,linewidth=0.2,alpha=0.5)        
 
-        for var_name in variables_to_delete:
-            del globals()[var_name]
-        import gc
-        gc.collect()            
+            verts = [[(-2.0, -2.0, 0), (-2.0, 2.0, 0), (2.0, 2.0, 0), (2.0, -2.0, 0)],
+                    [(-2.0, -2.0, 1), (-2.0, 0, 1), (2.0, 0, 1), (2.0, -2.0, 1)],
+                    [(-2.0, 0, 2), (-2.0, 2.0, 2), (2.0, 2.0, 2), (2.0, 0, 2)]]
+            planes = Poly3DCollection(verts, alpha=0.3, facecolor='lightgray')
+
+            ax1.text(-2.5,2.2,1.8,
+                    "TF ("+"I:"+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="TF") & (TFmiRNAmRNA["FC"]=="UP")]["Regulator"].unique()))+', D:'+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="TF") & (TFmiRNAmRNA["FC"]=="Down")]["Regulator"].unique()))+')',
+                    fontname="Arial",color="white",fontsize=9)
+            ax1.text(-2.5,2.2,0.8,
+                    "miRNA ("+"I:"+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="miRNA") & (TFmiRNAmRNA["FC"]=="UP")]["Regulator"].unique()))+', D:'+str(len(TFmiRNAmRNA[(TFmiRNAmRNA["Regulation"]=="miRNA") & (TFmiRNAmRNA["FC"]=="Down")]["Regulator"].unique()))+')',
+                    fontname="Arial",color="white",fontsize=9)
+            ax1.text(-2.5,2.2,-0.2,
+                    "mRNA ("+"I:"+str(len(TFmiRNAmRNA[TFmiRNAmRNA['FC']=="UP"]["mRNA"].unique()))+', D:'+str(len(TFmiRNAmRNA[TFmiRNAmRNA['FC']=="Down"]["mRNA"].unique()))+')',
+                    fontname="Arial",color="white",fontsize=9)
+
+            ax1.add_collection3d(planes)
+            ax1.set_xlim([-1,4])
+            ax1.set_ylim([-1,4])
+            ax1.set_zlim([-1,4])
+            ax1.axis('off')
+            ax1.view_init(7, 10)
+            st.pyplot(fig)
+            f=open('./Fig/A2.txt', 'r')
+            st.write(f.read()) 
+            
+            net=Network(notebook=True,cdn_resources='in_line',height="1000px", filter_menu=True, 
+            width="100%", bgcolor="#222222", font_color="white",directed=False)
+            net.from_nx(G1)
+            for node in net.get_nodes():
+                random.seed(4) 
+                net.get_node(node)['x']=5000*pos[node][0]
+                net.get_node(node)['y']=500*np.random.rand()-5000*pos[node][2]
+                net.get_node(node)['physics']=False
+                net.get_node(node)['label']=str(node) 
+                net.get_node(node)['size']=5
+                if len(TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==node])>0:
+                    net.get_node(node)['color']="white"
+                if len(TFmiRNAmRNA[TFmiRNAmRNA["mRNA"]==node])>0:
+                    TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["mRNA"]==node]
+                    if (TFmiRNAmRNA1["FC"]=="UP").sum()>0:
+                        net.get_node(node)['color']=Inc_color
+                    elif (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
+                        net.get_node(node)['color']=Dec_color
+            for edge in net.get_edges():
+                TFmiRNAmRNA1=TFmiRNAmRNA[TFmiRNAmRNA["Regulator"]==edge["from"]]
+                TFmiRNAmRNA1=TFmiRNAmRNA1[TFmiRNAmRNA1["mRNA"]==edge['to']]
+                if (TFmiRNAmRNA1["FC"]=="UP").sum()>0:
+                    edge['color']=Inc_color
+                elif (TFmiRNAmRNA1["FC"]=="Down").sum()>0:
+                    edge['color']=Dec_color
+            net.toggle_physics(False)
+            net.show_buttons() 
+            net.show("TFmiRNA-mRNA.html")
+            HtmlFile = open("TFmiRNA-mRNA.html", 'r')
+            components.html(HtmlFile.read(), height=900)
+            st.download_button(label="Download the interactice network",data=open("TFmiRNA-mRNA.html", 'r'),
+                            file_name="TFmiRNA-mRNA.html")
+            G1 = nx.Graph()
+            del TFmiRNAmRNA
+            del TFmiRNAmRNA1
+            gc.collect()  
+            
+            current_variables = list(globals().keys())
+            exclude_list = ['current_variables', 'exclude_list','selected_option']
+            variables_to_delete = [var for var in current_variables if var not in exclude_list]
+
+            for var_name in variables_to_delete:
+                del globals()[var_name]
+            import gc
+            gc.collect()            
         
     else:
         image = Image.open('./Fig/0.png')
