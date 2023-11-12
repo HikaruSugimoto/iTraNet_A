@@ -240,6 +240,14 @@ if selected_option=="A, gene regulatory network (including TF, miRNA, and mRNA) 
         
         if TFmiRNAmRNA.memory_usage(deep=True).sum() / 1024 ** 2>40:
             st.write("Too many relations to visualize. Please visualize the network on a local machine (https://github.com/HikaruSugimoto/Transomics_iTraNet).")
+            current_variables = list(globals().keys())
+            exclude_list = ['current_variables', 'exclude_list','selected_option']
+            variables_to_delete = [var for var in current_variables if var not in exclude_list]
+
+            for var_name in variables_to_delete:
+                del globals()[var_name]
+            import gc
+            gc.collect()         
         else:
             #Network
             fig = plt.figure(figsize=(12,8),facecolor='black')
