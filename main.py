@@ -91,7 +91,7 @@ if df_ref is None:
 #2, select an analysis method
 st.sidebar.subheader('2, Select an analysis method')
 options = ['A, gene regulatory network (including TF, miRNA, and mRNA) (transcriptome)']
-selected_option = st.sidebar.radio('*"gene regulatory network" takes several minutes',options, key="2")
+selected_option = st.sidebar.radio('The following interaction is automatically estimated upon submission of the omics data. This analysis takes several minutes.',options, key="2")
 
 st.sidebar.subheader('3, Set parameters')
 options = ['cyan','blue','green','red','magenta','yellow','black','white']
