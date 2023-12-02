@@ -46,6 +46,7 @@ st.write("This website is free and open to all users and there is no login requi
 #1, upload omics data
 #Slidebar
 st.sidebar.subheader('1, Upload omics data')
+
 #while not os.path.isfile('demo.zip'):
 if(os.path.isfile('demo.zip')):
     os.remove('demo.zip')
@@ -69,6 +70,7 @@ with open("demo.zip", "rb") as file:
     st.sidebar.markdown(href, unsafe_allow_html=True)
 if(os.path.isfile('demo.zip')):
     os.remove('demo.zip')
+st.sidebar.write('*Please unzip the file before uploading the demo data.')
     
 Tran = st.sidebar.file_uploader("Transcriptome (organ or cell)", type="csv")
 df_ref=st.sidebar.file_uploader("Option: background gene (for TF estimation)", type="csv")
